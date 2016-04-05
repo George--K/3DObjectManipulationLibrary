@@ -81,9 +81,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="WindowBuilder.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders.shader" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="WindowBuilder.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

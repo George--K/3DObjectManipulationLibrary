@@ -1,8 +1,7 @@
-#include <windows.h>
-#include <windowsx.h>
 #include <d3d11.h>
 #include <d3dx11.h>
 #include <d3dx10.h>
+#include "WindowBuilder.h"
 
 #pragma comment (lib, "d3d11.lib")
 #pragma comment (lib, "d3dx11.lib")
@@ -53,36 +52,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	LPSTR lpCmdLine,
 	int nCmdShow)
 {
-	HWND windowHandle;
-	WNDCLASSEX windowClass;
-
-	ZeroMemory(&windowClass, sizeof(WNDCLASSEX));
-
-	windowClass.cbSize = sizeof(WNDCLASSEX);
-	windowClass.style = CS_HREDRAW | CS_VREDRAW;
-	windowClass.lpfnWndProc = WindowProc;
-	windowClass.hInstance = hInstance;
-	windowClass.hCursor = LoadCursor(NULL, IDC_ARROW);
-	windowClass.lpszClassName = L"WindowClass";
-
-	RegisterClassEx(&windowClass);
-
-	RECT windowRectangle = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
-	AdjustWindowRect(&windowRectangle, WS_OVERLAPPEDWINDOW, FALSE);
-
-	windowHandle = CreateWindowExW(NULL,
-		L"WindowClass",
-		L"Direct3D Testing App",
-		WS_OVERLAPPEDWINDOW,
-		0,
-		0,
-		windowRectangle.right - windowRectangle.left,
-		windowRectangle.bottom - windowRectangle.top,
-		NULL,
-		NULL,
-		hInstance,
-		NULL);
-
+	HWND windowHandle = WindowBuilder::Create(1366, 768, hInstance);
 	ShowWindow(windowHandle, nCmdShow);
 	InitD3D(windowHandle);
 
@@ -101,20 +71,6 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 	CleanD3D();
 	return message.wParam;
-}
-
-LRESULT CALLBACK WindowProc(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	switch (message)
-	{
-		case WM_DESTROY:
-				{
-					PostQuitMessage(0);
-					return 0;
-				}
-				break;
-	}
-	return DefWindowProc(windowHandle, message, wParam, lParam);
 }
 
 void InitD3D(HWND windowHandle)
