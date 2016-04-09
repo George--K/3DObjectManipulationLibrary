@@ -1,7 +1,8 @@
 #include <d3d11.h>
 #include <d3dx11.h>
 #include <d3dx10.h>
-#include "WindowBuilder.h"
+#include <thread>
+#include "MessageQueue.h"
 
 #pragma comment (lib, "d3d11.lib")
 #pragma comment (lib, "d3dx11.lib")
@@ -47,27 +48,37 @@ void InitStates(void);
 
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
+bool tempvar = false;
+
+void temp()
+{
+	std::chrono::milliseconds wait(10);
+	while (!tempvar)
+	{
+		RenderFrame();
+		std::this_thread::sleep_for(wait);
+	}
+}
+
 int WINAPI WinMain(HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
 	LPSTR lpCmdLine,
 	int nCmdShow)
 {
-	HWND windowHandle = WindowBuilder::Create(1366, 768, hInstance);
+	HWND windowHandle;
+	MSG message;
+	std::thread messageLoopThread(MessageQueue::MessageLoop, &message, hInstance, &windowHandle);
+	std::unique_lock<std::mutex> lock(MessageQueue::windowReadyLock);
+	while (!MessageQueue::windowReady)
+	{
+		MessageQueue::windowReadyConditionalVariable.wait(lock);
+	}
 	ShowWindow(windowHandle, nCmdShow);
 	InitD3D(windowHandle);
-
-	MSG message;
-	while (TRUE)
-	{
-		if (PeekMessage(&message, NULL, 0, 0, PM_REMOVE))
-		{
-			TranslateMessage(&message);
-			DispatchMessage(&message);
-			if (message.message == WM_QUIT)
-				break;
-		}
-		RenderFrame();
-	}
+	std::thread renderLoopThread(temp);
+	messageLoopThread.join();
+	tempvar = true;
+	renderLoopThread.join();
 
 	CleanD3D();
 	return message.wParam;
@@ -85,7 +96,7 @@ void InitD3D(HWND windowHandle)
 	swapChainDescription.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	swapChainDescription.OutputWindow = windowHandle;
 	swapChainDescription.SampleDesc.Count = 4;
-	swapChainDescription.Windowed = FALSE;
+	swapChainDescription.Windowed = TRUE;
 	swapChainDescription.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
 	D3D11CreateDeviceAndSwapChain(NULL,

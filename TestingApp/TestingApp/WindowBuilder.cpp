@@ -36,6 +36,15 @@ LRESULT CALLBACK WindowBuilder::WindowProc(HWND windowHandle, UINT message, WPAR
 {
 	switch (message)
 	{
+		case WM_KEYDOWN:
+		{
+			if (wParam == VK_ESCAPE)
+			{
+				PostQuitMessage(0);
+				return 0;
+			}
+		}
+		break;
 		case WM_DESTROY:
 		{
 			PostQuitMessage(0);
