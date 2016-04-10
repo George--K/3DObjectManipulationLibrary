@@ -2,6 +2,7 @@
 #include <d3d11.h>
 #include <d3dx11.h>
 #include <d3dx10.h>
+#include "ICameraService.h"
 
 #pragma comment (lib, "d3d11.lib")
 #pragma comment (lib, "d3dx11.lib")
@@ -23,6 +24,8 @@ class D3dRenderService
 	private:
 		bool stopped = false;
 
+		ICameraService* cameraService;
+
 		int screenWidth;
 		int screenHeight;
 
@@ -43,7 +46,7 @@ class D3dRenderService
 		ID3D11SamplerState *samplerState;
 		ID3D11BlendState *blendState;
 	public:
-		D3dRenderService(HWND windowHandle, int width, int height);
+		D3dRenderService(HWND windowHandle, int screenWidth, int screenHeight, ICameraService* cameraService);
 		void RenderLoop();
 		void StopService();
 		void InitD3D(HWND windowHandle);

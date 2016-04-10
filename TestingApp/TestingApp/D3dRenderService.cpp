@@ -1,10 +1,11 @@
 #include "D3dRenderService.h"
 
 
-D3dRenderService::D3dRenderService(HWND windowHandle, int width, int height)
+D3dRenderService::D3dRenderService(HWND windowHandle, int screenWidth, int screenHeight, ICameraService* cameraService)
 {
-	screenWidth = width;
-	screenHeight = height;
+	this->screenWidth = screenWidth;
+	this->screenHeight = screenHeight;
+	this->cameraService = cameraService;
 	InitD3D(windowHandle);
 }
 
@@ -105,10 +106,12 @@ void D3dRenderService::RenderFrame(void)
 	static float Time = 0.0f; Time += 0.0003f;
 	D3DXMatrixRotationY(&matRotate, Time);
 
+	CameraProperties cameraProperties = cameraService->getCameraPropertiesForRendering();
+
 	D3DXMatrixLookAtLH(&matView,
-		&D3DXVECTOR3(0.0f, 3.0f, 5.0f),
-		&D3DXVECTOR3(0.0f, 0.0f, 0.0f),
-		&D3DXVECTOR3(0.0f, 1.0f, 0.0f));
+		&cameraProperties.Location,
+		&cameraProperties.LookAt,
+		&cameraProperties.UpDirection);
 
 	D3DXMatrixPerspectiveFovLH(&matProjection,
 		(FLOAT)D3DXToRadian(45),
@@ -154,6 +157,8 @@ void D3dRenderService::CleanD3D(void)
 	backBuffer->Release();
 	d3dDeviceInterface->Release();
 	d3dDeviceContext->Release();
+
+	delete cameraService;
 }
 
 void D3dRenderService::InitGraphics()
