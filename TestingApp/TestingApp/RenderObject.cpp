@@ -1,10 +1,12 @@
 #include "RenderObject.h"
 
 
-RenderObject::RenderObject(float locationX = 0.0f, float locationY = 0.0f, float locationZ = 0.0f,
-						   float rotationX = 0.0f, float rotationY = 0.0f, float rotationZ = 0.0f,
-						   float scaleX = 1.0f, float scaleY = 1.0f, float scaleZ = 1.0f)
+RenderObject::RenderObject(std::string meshName,
+						   float locationX, float locationY, float locationZ,
+						   float rotationX, float rotationY, float rotationZ,
+						   float scaleX, float scaleY, float scaleZ)
 {
+	this->meshName = meshName;
 	this->locationX = locationX;
 	this->locationY = locationY;
 	this->locationZ = locationZ;

@@ -1,8 +1,7 @@
 #pragma once
 #include <vector>
 #include "ICameraService.h"
-class MultipleCameraService :
-	public ICameraService
+class MultipleCameraService : public ICameraService
 {
 	private:
 		std::vector<CameraProperties> cameraList;

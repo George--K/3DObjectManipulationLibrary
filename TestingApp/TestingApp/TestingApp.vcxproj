@@ -82,7 +82,9 @@
   <ItemGroup>
     <ClCompile Include="D3dRenderService.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="MultipleCameraService.cpp" />
+    <ClCompile Include="RenderObject.cpp" />
     <ClCompile Include="WindowBuilder.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -91,8 +93,10 @@
   <ItemGroup>
     <ClInclude Include="D3dRenderService.h" />
     <ClInclude Include="ICameraService.h" />
+    <ClInclude Include="Mesh.h" />
     <ClInclude Include="MessageQueue.h" />
     <ClInclude Include="MultipleCameraService.h" />
+    <ClInclude Include="RenderObject.h" />
     <ClInclude Include="WindowBuilder.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
