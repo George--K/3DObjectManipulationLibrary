@@ -80,23 +80,29 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="D3dRenderService.cpp" />
+    <ClCompile Include="AdaptiveMeshService.cpp" />
+    <ClCompile Include="RenderService.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="MultipleCameraService.cpp" />
     <ClCompile Include="RenderObject.cpp" />
+    <ClCompile Include="SimpleLightService.cpp" />
     <ClCompile Include="WindowBuilder.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders.shader" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="D3dRenderService.h" />
+    <ClInclude Include="AdaptiveMeshService.h" />
+    <ClInclude Include="RenderService.h" />
     <ClInclude Include="ICameraService.h" />
+    <ClInclude Include="ILightService.h" />
+    <ClInclude Include="IMeshService.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="MessageQueue.h" />
     <ClInclude Include="MultipleCameraService.h" />
     <ClInclude Include="RenderObject.h" />
+    <ClInclude Include="SimpleLightService.h" />
     <ClInclude Include="WindowBuilder.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

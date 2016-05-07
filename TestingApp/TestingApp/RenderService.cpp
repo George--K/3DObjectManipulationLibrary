@@ -1,15 +1,15 @@
-#include "D3dRenderService.h"
+#include "RenderService.h"
 
-
-D3dRenderService::D3dRenderService(HWND windowHandle, int screenWidth, int screenHeight, ICameraService* cameraService)
+RenderService::RenderService(CoreD3dService* coreService, ICameraService* cameraService)
 {
-	this->screenWidth = screenWidth;
-	this->screenHeight = screenHeight;
+	this->coreService = coreService;
 	this->cameraService = cameraService;
-	InitD3D(windowHandle);
+	InitPipeline();
+	InitGraphics();
+	InitStates();
 }
 
-void D3dRenderService::RenderLoop()
+void RenderService::RenderLoop()
 {
 	while (!stopped)
 	{
@@ -18,89 +18,23 @@ void D3dRenderService::RenderLoop()
 	}
 }
 
-void D3dRenderService::StopService()
+void RenderService::StopService()
 {
 	stopped = true;
 }
 
-void D3dRenderService::InitD3D(HWND windowHandle)
+void RenderService::RenderFrame(void)
 {
-	DXGI_SWAP_CHAIN_DESC swapChainDescription;
-	ZeroMemory(&swapChainDescription, sizeof(DXGI_SWAP_CHAIN_DESC));
+	ID3D11Device* d3dDeviceInterface = coreService->getDeviceInterface();
+	ID3D11DeviceContext* d3dDeviceContext = coreService->getDeviceContext();
 
-	swapChainDescription.BufferCount = 1;
-	swapChainDescription.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	swapChainDescription.BufferDesc.Width = screenWidth;
-	swapChainDescription.BufferDesc.Height = screenHeight;
-	swapChainDescription.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	swapChainDescription.OutputWindow = windowHandle;
-	swapChainDescription.SampleDesc.Count = 4;
-	swapChainDescription.Windowed = TRUE;
-	swapChainDescription.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
-
-	D3D11CreateDeviceAndSwapChain(NULL,
-		D3D_DRIVER_TYPE_HARDWARE,
-		NULL,
-		NULL,
-		NULL,
-		NULL,
-		D3D11_SDK_VERSION,
-		&swapChainDescription,
-		&swapÑhain,
-		&d3dDeviceInterface,
-		NULL,
-		&d3dDeviceContext);
-
-	D3D11_TEXTURE2D_DESC textureDescription;
-	ZeroMemory(&textureDescription, sizeof(textureDescription));
-
-	textureDescription.Width = screenWidth;
-	textureDescription.Height = screenHeight;
-	textureDescription.ArraySize = 1;
-	textureDescription.MipLevels = 1;
-	textureDescription.SampleDesc.Count = 4;
-	textureDescription.Format = DXGI_FORMAT_D32_FLOAT;
-	textureDescription.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-
-	ID3D11Texture2D *textureDepthBuffer;
-	d3dDeviceInterface->CreateTexture2D(&textureDescription, NULL, &textureDepthBuffer);
-	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDescription;
-	ZeroMemory(&depthStencilViewDescription, sizeof(depthStencilViewDescription));
-	depthStencilViewDescription.Format = DXGI_FORMAT_D32_FLOAT;
-	depthStencilViewDescription.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
-
-	d3dDeviceInterface->CreateDepthStencilView(textureDepthBuffer, &depthStencilViewDescription, &depthBuffer);
-	d3dDeviceInterface->Release();
-	ID3D11Texture2D *textureBackBuffer;
-	swapÑhain->GetBuffer(NULL, __uuidof(ID3D11Texture2D), (LPVOID*)&textureBackBuffer);
-
-	d3dDeviceInterface->CreateRenderTargetView(textureBackBuffer, NULL, &backBuffer);
-	d3dDeviceContext->OMSetRenderTargets(1, &backBuffer, depthBuffer);
-
-	D3D11_VIEWPORT viewport;
-	ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
-	viewport.TopLeftX = 0;
-	viewport.TopLeftY = 0;
-	viewport.Width = screenWidth;
-	viewport.Height = screenHeight;
-	viewport.MinDepth = 0;
-	viewport.MaxDepth = 1;
-	d3dDeviceContext->RSSetViewports(1, &viewport);
-
-	InitPipeline();
-	InitGraphics();
-	InitStates();
-}
-
-void D3dRenderService::RenderFrame(void)
-{
-	CONSTANT_BUFFER constantBuffer;
+	MATRICES_BUFFER constantBuffer;
 
 	constantBuffer.directionalLightVector = D3DXVECTOR4(1.0f, 1.0f, 1.0f, 0.0f);
 	constantBuffer.directionalLightColor = D3DXCOLOR(0.5f, 0.5f, 0.5f, 1.0f);
 	constantBuffer.ambientLightColor = D3DXCOLOR(0.2f, 0.2f, 0.2f, 1.0f);
 
-	D3DXMATRIX matRotate, matView, matProjection;
+	D3DXMATRIX matTranslate, matRotate, matScale, matView, matProjection;
 	D3DXMATRIX matFinal;
 
 	static float Time = 0.0f; Time += 0.0003f;
@@ -115,7 +49,7 @@ void D3dRenderService::RenderFrame(void)
 
 	D3DXMatrixPerspectiveFovLH(&matProjection,
 		(FLOAT)D3DXToRadian(45),
-		(FLOAT)screenWidth / (FLOAT)screenHeight,
+		coreService->getAspectRatio(),
 		1.0f,
 		100.0f);
 
@@ -134,35 +68,34 @@ void D3dRenderService::RenderFrame(void)
 	d3dDeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
 	d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	d3dDeviceContext->UpdateSubresource(constBuffer, NULL, NULL, &constantBuffer, 0, 0);
+	d3dDeviceContext->UpdateSubresource(matricesBuffer, NULL, NULL, &constantBuffer, 0, 0);
 	d3dDeviceContext->PSSetShaderResources(0, 1, &texture);
 	d3dDeviceContext->DrawIndexed(36, 0, 0);
-
-	swapÑhain->Present(0, NULL);
+	D3DXMatrixTranslation(&matTranslate, 0.0f, 0.0f, -5.0f);
+	D3DXMatrixScaling(&matScale, 2.0f, 2.0f, 2.0f);
+	constantBuffer.finalTransformationMatrix = matRotate * matTranslate * matScale * matView * matProjection;
+	d3dDeviceContext->UpdateSubresource(matricesBuffer, NULL, NULL, &constantBuffer, 0, 0);
+	d3dDeviceContext->DrawIndexed(36, 0, 0);
+	coreService->getSwapChain()->Present(0, NULL);
 }
 
-void D3dRenderService::CleanD3D(void)
+void RenderService::CleanD3D(void)
 {
-	swapÑhain->SetFullscreenState(FALSE, NULL);
-
-	depthBuffer->Release();
+	coreService->getSwapChain()->SetFullscreenState(FALSE, NULL);
 	inputLayout->Release();
 	vertexShader->Release();
 	pixelShader->Release();
 	vertexBuffer->Release();
 	indexBuffer->Release();
-	constBuffer->Release();
+	matricesBuffer->Release();
 	texture->Release();
-	swapÑhain->Release();
-	backBuffer->Release();
-	d3dDeviceInterface->Release();
-	d3dDeviceContext->Release();
-
-	delete cameraService;
 }
 
-void D3dRenderService::InitGraphics()
+void RenderService::InitGraphics()
 {
+	ID3D11Device* d3dDeviceInterface = coreService->getDeviceInterface();
+	ID3D11DeviceContext* d3dDeviceContext = coreService->getDeviceContext();
+
 	VERTEX OurVertices[] =
 	{
 		{ -1.0f, -1.0f, 1.0f, D3DXVECTOR3(0.0f, 0.0f, 1.0f), 0.0f, 0.0f },
@@ -246,8 +179,11 @@ void D3dRenderService::InitGraphics()
 		NULL);
 }
 
-void D3dRenderService::InitPipeline()
+void RenderService::InitPipeline()
 {
+	ID3D11Device* d3dDeviceInterface = coreService->getDeviceInterface();
+	ID3D11DeviceContext* d3dDeviceContext = coreService->getDeviceContext();
+
 	ID3D10Blob *VS, *PS;
 	D3DX11CompileFromFile(L"shaders.shader", 0, 0, "VShader", "vs_4_0", 0, 0, 0, &VS, 0, 0);
 	D3DX11CompileFromFile(L"shaders.shader", 0, 0, "PShader", "ps_4_0", 0, 0, 0, &PS, 0, 0);
@@ -269,14 +205,16 @@ void D3dRenderService::InitPipeline()
 	D3D11_BUFFER_DESC buffDesc;
 	ZeroMemory(&buffDesc, sizeof(buffDesc));
 	buffDesc.Usage = D3D11_USAGE_DEFAULT;
-	buffDesc.ByteWidth = 176;
+	buffDesc.ByteWidth = sizeof(MATRICES_BUFFER);
 	buffDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	d3dDeviceInterface->CreateBuffer(&buffDesc, NULL, &constBuffer);
-	d3dDeviceContext->VSSetConstantBuffers(0, 1, &constBuffer);
+	d3dDeviceInterface->CreateBuffer(&buffDesc, NULL, &matricesBuffer);
+	d3dDeviceContext->VSSetConstantBuffers(0, 1, &matricesBuffer);
 }
 
-void D3dRenderService::InitStates()
+void RenderService::InitStates()
 {
+	ID3D11Device* d3dDeviceInterface = coreService->getDeviceInterface();
+
 	D3D11_RASTERIZER_DESC rasterizerDescription;
 	rasterizerDescription.FillMode = D3D11_FILL_SOLID;
 	rasterizerDescription.CullMode = D3D11_CULL_BACK;
@@ -320,7 +258,7 @@ void D3dRenderService::InitStates()
 	d3dDeviceInterface->CreateBlendState(&blendDescription, &blendState);
 }
 
-D3dRenderService::~D3dRenderService()
+RenderService::~RenderService()
 {
 	CleanD3D();
 }
