@@ -1,10 +1,14 @@
-cbuffer ConstantBuffer
+cbuffer LightBuffer
 {
-    float4x4 finalTransformationMatrix;
-    float4x4 rotationMatrix;
     float4 directionalLightVector;
     float4 directionalLightColor;
     float4 ambientLightColor;
+}
+
+cbuffer MatricesBuffer
+{
+    float4x4 finalTransformationMatrix;
+    float4x4 rotationMatrix;
 }
 
 Texture2D Texture;

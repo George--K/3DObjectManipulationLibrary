@@ -84,6 +84,16 @@ ID3D11DeviceContext* CoreD3dService::getDeviceContext()
 	return d3dDeviceContext;
 }
 
+ID3D11RenderTargetView* CoreD3dService::getBackBuffer()
+{
+	return backBuffer;
+}
+
+ID3D11DepthStencilView* CoreD3dService::getDepthBuffer()
+{
+	return depthBuffer;
+}
+
 float CoreD3dService::getAspectRatio()
 {
 	return (FLOAT)screenWidth / (FLOAT)screenHeight;

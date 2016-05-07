@@ -1,15 +1,16 @@
 #include "RenderService.h"
 
-RenderService::RenderService(CoreD3dService* coreService, ICameraService* cameraService)
+RenderService::RenderService(CoreD3dService* coreService, ICameraService* cameraService, ILightService* lightService)
 {
 	this->coreService = coreService;
 	this->cameraService = cameraService;
+	this->lightService = lightService;
 	InitPipeline();
 	InitGraphics();
 	InitStates();
 }
 
-void RenderService::RenderLoop()
+void RenderService::BeginRenderLoop()
 {
 	while (!stopped)
 	{
@@ -30,15 +31,10 @@ void RenderService::RenderFrame(void)
 
 	MATRICES_BUFFER constantBuffer;
 
-	constantBuffer.directionalLightVector = D3DXVECTOR4(1.0f, 1.0f, 1.0f, 0.0f);
-	constantBuffer.directionalLightColor = D3DXCOLOR(0.5f, 0.5f, 0.5f, 1.0f);
-	constantBuffer.ambientLightColor = D3DXCOLOR(0.2f, 0.2f, 0.2f, 1.0f);
-
 	D3DXMATRIX matTranslate, matRotate, matScale, matView, matProjection;
 	D3DXMATRIX matFinal;
 
-	static float Time = 0.0f; Time += 0.0003f;
-	D3DXMatrixRotationY(&matRotate, Time);
+	D3DXMatrixRotationY(&matRotate, 0.5);
 
 	CameraProperties cameraProperties = cameraService->getCameraPropertiesForRendering();
 
@@ -59,8 +55,8 @@ void RenderService::RenderFrame(void)
 	d3dDeviceContext->RSSetState(rasterizerState);
 	d3dDeviceContext->PSSetSamplers(0, 1, &samplerState);
 	d3dDeviceContext->OMSetBlendState(blendState, 0, 0xffffffff);
-	d3dDeviceContext->ClearRenderTargetView(backBuffer, D3DXCOLOR(0.0f, 0.2f, 0.4f, 1.0f));
-	d3dDeviceContext->ClearDepthStencilView(depthBuffer, D3D11_CLEAR_DEPTH, 1.0f, 0);
+	d3dDeviceContext->ClearRenderTargetView(coreService->getBackBuffer(), D3DXCOLOR(0.0f, 0.2f, 0.4f, 1.0f));
+	d3dDeviceContext->ClearDepthStencilView(coreService->getDepthBuffer(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 	UINT stride = sizeof(VERTEX);
 	UINT offset = 0;
@@ -75,6 +71,7 @@ void RenderService::RenderFrame(void)
 	D3DXMatrixScaling(&matScale, 2.0f, 2.0f, 2.0f);
 	constantBuffer.finalTransformationMatrix = matRotate * matTranslate * matScale * matView * matProjection;
 	d3dDeviceContext->UpdateSubresource(matricesBuffer, NULL, NULL, &constantBuffer, 0, 0);
+	lightService->UpdateLightBuffers();
 	d3dDeviceContext->DrawIndexed(36, 0, 0);
 	coreService->getSwapChain()->Present(0, NULL);
 }
@@ -208,7 +205,7 @@ void RenderService::InitPipeline()
 	buffDesc.ByteWidth = sizeof(MATRICES_BUFFER);
 	buffDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	d3dDeviceInterface->CreateBuffer(&buffDesc, NULL, &matricesBuffer);
-	d3dDeviceContext->VSSetConstantBuffers(0, 1, &matricesBuffer);
+	d3dDeviceContext->VSSetConstantBuffers(1, 1, &matricesBuffer);
 }
 
 void RenderService::InitStates()

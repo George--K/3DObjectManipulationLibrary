@@ -1,6 +1,7 @@
 #pragma once
 #include "Mesh.h"
 #include <map>
+#include <string>
 
 class IMeshService
 {

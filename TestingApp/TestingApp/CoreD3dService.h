@@ -18,6 +18,8 @@ class CoreD3dService
 		IDXGISwapChain* getSwapChain();
 		ID3D11Device* getDeviceInterface();
 		ID3D11DeviceContext* getDeviceContext();
+		ID3D11RenderTargetView* getBackBuffer();
+		ID3D11DepthStencilView* getDepthBuffer();
 		float getAspectRatio();
 		~CoreD3dService();
 };

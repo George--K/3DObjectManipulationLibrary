@@ -81,6 +81,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AdaptiveMeshService.cpp" />
+    <ClCompile Include="CoreD3dService.cpp" />
     <ClCompile Include="RenderService.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mesh.cpp" />
@@ -94,6 +95,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AdaptiveMeshService.h" />
+    <ClInclude Include="CoreD3dService.h" />
     <ClInclude Include="RenderService.h" />
     <ClInclude Include="ICameraService.h" />
     <ClInclude Include="ILightService.h" />
