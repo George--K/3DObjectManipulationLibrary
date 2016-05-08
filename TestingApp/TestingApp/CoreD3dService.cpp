@@ -99,6 +99,29 @@ float CoreD3dService::getAspectRatio()
 	return (FLOAT)screenWidth / (FLOAT)screenHeight;
 }
 
+HRESULT CoreD3dService::CreateBuffer(D3D11_BUFFER_DESC* desc, ID3D11Buffer** buffer)
+{
+	return d3dDeviceInterface->CreateBuffer(desc, NULL, buffer);
+}
+
+void CoreD3dService::RegisterConstantBuffer(int slot, ID3D11Buffer* const* buffer)
+{
+	d3dDeviceContext->VSSetConstantBuffers(slot, 1, buffer);
+}
+
+void CoreD3dService::UpdateDefaultBuffer(ID3D11Buffer* buffer, const void* data)
+{
+	d3dDeviceContext->UpdateSubresource(buffer, NULL, NULL, data, 0, 0);
+}
+
+void CoreD3dService::UpdateDynamicBuffer(ID3D11Buffer* buffer, const void* data, size_t size)
+{
+	D3D11_MAPPED_SUBRESOURCE mappedSubresource;
+	d3dDeviceContext->Map(buffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &mappedSubresource);
+	memcpy(mappedSubresource.pData, data, size);
+	d3dDeviceContext->Unmap(buffer, NULL);
+}
+
 CoreD3dService::~CoreD3dService()
 {
 	depthBuffer->Release();

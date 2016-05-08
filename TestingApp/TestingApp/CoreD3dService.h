@@ -21,6 +21,10 @@ class CoreD3dService
 		ID3D11RenderTargetView* getBackBuffer();
 		ID3D11DepthStencilView* getDepthBuffer();
 		float getAspectRatio();
+		HRESULT CreateBuffer(D3D11_BUFFER_DESC* desc, ID3D11Buffer** buffer);
+		void RegisterConstantBuffer(int slot, ID3D11Buffer* const* buffer);
+		void UpdateDefaultBuffer(ID3D11Buffer* buffer, const void* data);
+		void UpdateDynamicBuffer(ID3D11Buffer* buffer, const void* data, size_t length);
 		~CoreD3dService();
 };
 

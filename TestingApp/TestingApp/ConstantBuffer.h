@@ -34,14 +34,14 @@ template <typename BufferStruct> class ConstantBuffer : public ConstantBufferTra
 			buffDesc.Usage = D3D11_USAGE_DEFAULT;
 			buffDesc.ByteWidth = (byteWidth / 16 + (byteWidth % 16 > 0 ? 1 : 0)) * 16;
 			buffDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-			coreService->getDeviceInterface()->CreateBuffer(&buffDesc, NULL, &innerBuffer);
+			coreService->CreateBuffer(&buffDesc, &innerBuffer);
 			reserveBufferAllocationSlot();
-			coreService->getDeviceContext()->VSSetConstantBuffers(occupiedSlot, 1, &innerBuffer);
+			coreService->RegisterConstantBuffer(occupiedSlot, &innerBuffer);
 		}
 
-		void UpdateBuffer(const BufferStruct* updateStruct)
+		void Update(const BufferStruct* updateStruct)
 		{
-			coreService->getDeviceContext()->UpdateSubresource(innerBuffer, NULL, NULL, updateStruct, 0, 0);
+			coreService->UpdateDefaultBuffer(innerBuffer, updateStruct);
 		}
 
 		~ConstantBuffer()

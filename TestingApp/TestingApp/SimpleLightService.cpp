@@ -14,7 +14,7 @@ void SimpleLightService::UpdateLightBuffers()
 {
 	if (changed)
 	{
-		simpleLightBuffer->UpdateBuffer(&lightState);
+		simpleLightBuffer->Update(&lightState);
 		changed = false;
 	}
 }

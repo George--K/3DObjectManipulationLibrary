@@ -26,10 +26,9 @@ void RenderService::StopService()
 
 void RenderService::RenderFrame(void)
 {
-	ID3D11Device* d3dDeviceInterface = coreService->getDeviceInterface();
 	ID3D11DeviceContext* d3dDeviceContext = coreService->getDeviceContext();
 
-	MATRICES_BUFFER constantBuffer;
+	MATRICES_BUFFER transformations;
 
 	D3DXMATRIX matTranslate, matRotate, matScale, matView, matProjection;
 	D3DXMATRIX matFinal;
@@ -49,8 +48,8 @@ void RenderService::RenderFrame(void)
 		1.0f,
 		100.0f);
 
-	constantBuffer.finalTransformationMatrix = matRotate * matView * matProjection;
-	constantBuffer.rotationMatrix = matRotate;
+	transformations.finalTransformationMatrix = matRotate * matView * matProjection;
+	transformations.rotationMatrix = matRotate;
 
 	d3dDeviceContext->RSSetState(rasterizerState);
 	d3dDeviceContext->PSSetSamplers(0, 1, &samplerState);
@@ -64,13 +63,13 @@ void RenderService::RenderFrame(void)
 	d3dDeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
 	d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	matricesBuffer->UpdateBuffer(&constantBuffer);
+	matricesBuffer->Update(&transformations);
 	d3dDeviceContext->PSSetShaderResources(0, 1, &texture);
 	d3dDeviceContext->DrawIndexed(36, 0, 0);
 	D3DXMatrixTranslation(&matTranslate, 0.0f, 0.0f, -5.0f);
 	D3DXMatrixScaling(&matScale, 2.0f, 2.0f, 2.0f);
-	constantBuffer.finalTransformationMatrix = matRotate * matTranslate * matScale * matView * matProjection;
-	matricesBuffer->UpdateBuffer(&constantBuffer);
+	transformations.finalTransformationMatrix = matRotate * matTranslate * matScale * matView * matProjection;
+	matricesBuffer->Update(&transformations);
 	lightService->UpdateLightBuffers();
 	d3dDeviceContext->DrawIndexed(36, 0, 0);
 	coreService->getSwapChain()->Present(0, NULL);
@@ -92,9 +91,6 @@ void RenderService::CleanD3D(void)
 
 void RenderService::InitGraphics()
 {
-	ID3D11Device* d3dDeviceInterface = coreService->getDeviceInterface();
-	ID3D11DeviceContext* d3dDeviceContext = coreService->getDeviceContext();
-
 	VERTEX OurVertices[] =
 	{
 		{ -1.0f, -1.0f, 1.0f, D3DXVECTOR3(0.0f, 0.0f, 1.0f), 0.0f, 0.0f },
@@ -136,11 +132,8 @@ void RenderService::InitGraphics()
 	bufferDescription.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-	d3dDeviceInterface->CreateBuffer(&bufferDescription, NULL, &vertexBuffer);
-	D3D11_MAPPED_SUBRESOURCE mappedSubresource;
-	d3dDeviceContext->Map(vertexBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &mappedSubresource);
-	memcpy(mappedSubresource.pData, OurVertices, sizeof(OurVertices));
-	d3dDeviceContext->Unmap(vertexBuffer, NULL);
+	coreService->CreateBuffer(&bufferDescription, &vertexBuffer);
+	coreService->UpdateDynamicBuffer(vertexBuffer, OurVertices, sizeof(OurVertices));
 
 	DWORD OurIndices[] =
 	{
@@ -164,13 +157,10 @@ void RenderService::InitGraphics()
 	bufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	bufferDescription.MiscFlags = 0;
 
-	d3dDeviceInterface->CreateBuffer(&bufferDescription, NULL, &indexBuffer);
+	coreService->CreateBuffer(&bufferDescription, &indexBuffer);
+	coreService->UpdateDynamicBuffer(indexBuffer, OurIndices, sizeof(OurIndices));
 
-	d3dDeviceContext->Map(indexBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &mappedSubresource);
-	memcpy(mappedSubresource.pData, OurIndices, sizeof(OurIndices));
-	d3dDeviceContext->Unmap(indexBuffer, NULL);
-
-	D3DX11CreateShaderResourceViewFromFile(d3dDeviceInterface,
+	D3DX11CreateShaderResourceViewFromFile(coreService->getDeviceInterface(),
 		L"E:\\bricks.png",
 		NULL,
 		NULL,
