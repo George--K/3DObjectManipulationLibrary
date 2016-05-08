@@ -16,7 +16,7 @@ CoreD3dService::CoreD3dService(HWND windowHandle, int screenWidth, int screenHei
 	swapChainDescription.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	swapChainDescription.OutputWindow = windowHandle;
 	swapChainDescription.SampleDesc.Count = 4;
-	swapChainDescription.Windowed = TRUE;
+	swapChainDescription.Windowed = FALSE;
 	swapChainDescription.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
 	D3D11CreateDeviceAndSwapChain(NULL,
@@ -51,7 +51,7 @@ CoreD3dService::CoreD3dService(HWND windowHandle, int screenWidth, int screenHei
 	depthStencilViewDescription.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
 
 	d3dDeviceInterface->CreateDepthStencilView(textureDepthBuffer, &depthStencilViewDescription, &depthBuffer);
-	d3dDeviceInterface->Release();
+	textureDepthBuffer->Release();
 	ID3D11Texture2D *textureBackBuffer;
 	swapChain->GetBuffer(NULL, __uuidof(ID3D11Texture2D), (LPVOID*)&textureBackBuffer);
 
@@ -69,9 +69,70 @@ CoreD3dService::CoreD3dService(HWND windowHandle, int screenWidth, int screenHei
 	d3dDeviceContext->RSSetViewports(1, &viewport);
 }
 
-IDXGISwapChain* CoreD3dService::getSwapChain()
+void CoreD3dService::InitStates()
 {
-	return swapChain;
+	D3D11_RASTERIZER_DESC rasterizerDescription;
+	rasterizerDescription.FillMode = D3D11_FILL_SOLID;
+	rasterizerDescription.CullMode = D3D11_CULL_BACK;
+	rasterizerDescription.FrontCounterClockwise = FALSE;
+	rasterizerDescription.DepthClipEnable = TRUE;
+	rasterizerDescription.ScissorEnable = FALSE;
+	rasterizerDescription.AntialiasedLineEnable = FALSE;
+	rasterizerDescription.MultisampleEnable = FALSE;
+	rasterizerDescription.DepthBias = 0;
+	rasterizerDescription.DepthBiasClamp = 0.0f;
+	rasterizerDescription.SlopeScaledDepthBias = 0.0f;
+	d3dDeviceInterface->CreateRasterizerState(&rasterizerDescription, &rasterizerState);
+
+	D3D11_SAMPLER_DESC samplerDescription;
+	samplerDescription.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDescription.MaxAnisotropy = 16;
+	samplerDescription.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDescription.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDescription.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDescription.BorderColor[0] = 0.0f;
+	samplerDescription.BorderColor[1] = 0.0f;
+	samplerDescription.BorderColor[2] = 0.0f;
+	samplerDescription.BorderColor[3] = 0.0f;
+	samplerDescription.MinLOD = 0.0f;
+	samplerDescription.MaxLOD = FLT_MAX;
+	samplerDescription.MipLODBias = 0.0f;
+	d3dDeviceInterface->CreateSamplerState(&samplerDescription, &samplerState);
+
+	D3D11_BLEND_DESC blendDescription;
+	blendDescription.RenderTarget[0].BlendEnable = TRUE;
+	blendDescription.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	blendDescription.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	blendDescription.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	blendDescription.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	blendDescription.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	blendDescription.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+	blendDescription.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	blendDescription.IndependentBlendEnable = FALSE;
+	blendDescription.AlphaToCoverageEnable = FALSE;
+
+	d3dDeviceInterface->CreateBlendState(&blendDescription, &blendState);
+}
+
+void CoreD3dService::SetStates()
+{
+	d3dDeviceContext->RSSetState(rasterizerState);
+	d3dDeviceContext->PSSetSamplers(0, 1, &samplerState);
+	d3dDeviceContext->OMSetBlendState(blendState, 0, 0xffffffff);
+}
+HRESULT CoreD3dService::ShowFrame()
+{
+	swapChain->Present(0, NULL);
+}
+
+HRESULT CoreD3dService::SwitchToFullscreenMode()
+{
+	swapChain->
+}
+
+HRESULT CoreD3dService::SwitchToWindowedMode()
+{
+	swapChain->Present(0, NULL);
 }
 
 ID3D11Device* CoreD3dService::getDeviceInterface()
@@ -84,14 +145,10 @@ ID3D11DeviceContext* CoreD3dService::getDeviceContext()
 	return d3dDeviceContext;
 }
 
-ID3D11RenderTargetView* CoreD3dService::getBackBuffer()
+void CoreD3dService::ClearRenderBuffers()
 {
-	return backBuffer;
-}
-
-ID3D11DepthStencilView* CoreD3dService::getDepthBuffer()
-{
-	return depthBuffer;
+	d3dDeviceContext->ClearRenderTargetView(backBuffer, D3DXCOLOR(0.0f, 0.2f, 0.4f, 1.0f));
+	d3dDeviceContext->ClearDepthStencilView(depthBuffer, D3D11_CLEAR_DEPTH, 1.0f, 0);
 }
 
 float CoreD3dService::getAspectRatio()

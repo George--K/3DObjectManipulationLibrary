@@ -7,7 +7,7 @@ RenderService::RenderService(CoreD3dService* coreService, ICameraService* camera
 	this->lightService = lightService;
 	InitPipeline();
 	InitGraphics();
-	InitStates();
+	coreService->InitStates();
 }
 
 void RenderService::BeginRenderLoop()
@@ -28,7 +28,7 @@ void RenderService::RenderFrame(void)
 {
 	ID3D11DeviceContext* d3dDeviceContext = coreService->getDeviceContext();
 
-	MATRICES_BUFFER transformations;
+	TRANSFORMATION_BUFFER transformations;
 
 	D3DXMATRIX matTranslate, matRotate, matScale, matView, matProjection;
 	D3DXMATRIX matFinal;
@@ -51,35 +51,34 @@ void RenderService::RenderFrame(void)
 	transformations.finalTransformationMatrix = matRotate * matView * matProjection;
 	transformations.rotationMatrix = matRotate;
 
-	d3dDeviceContext->RSSetState(rasterizerState);
-	d3dDeviceContext->PSSetSamplers(0, 1, &samplerState);
-	d3dDeviceContext->OMSetBlendState(blendState, 0, 0xffffffff);
-	d3dDeviceContext->ClearRenderTargetView(coreService->getBackBuffer(), D3DXCOLOR(0.0f, 0.2f, 0.4f, 1.0f));
-	d3dDeviceContext->ClearDepthStencilView(coreService->getDepthBuffer(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+	coreService->SetStates();
+	coreService->ClearRenderBuffers();
 
+	d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	UINT stride = sizeof(VERTEX);
 	UINT offset = 0;
 	d3dDeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
 	d3dDeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-	d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	matricesBuffer->Update(&transformations);
+	transformationBuffer->Update(&transformations);
 	d3dDeviceContext->PSSetShaderResources(0, 1, &texture);
 	d3dDeviceContext->DrawIndexed(36, 0, 0);
+
 	D3DXMatrixTranslation(&matTranslate, 0.0f, 0.0f, -5.0f);
 	D3DXMatrixScaling(&matScale, 2.0f, 2.0f, 2.0f);
 	transformations.finalTransformationMatrix = matRotate * matTranslate * matScale * matView * matProjection;
-	matricesBuffer->Update(&transformations);
+	transformationBuffer->Update(&transformations);
 	lightService->UpdateLightBuffers();
 	d3dDeviceContext->DrawIndexed(36, 0, 0);
-	coreService->getSwapChain()->Present(0, NULL);
+
+	coreService->ShowFrame();
 }
 
 void RenderService::CleanD3D(void)
 {
-	coreService->getSwapChain()->SetFullscreenState(FALSE, NULL);
+	coreService->SwitchToWindowedMode();
 
-	delete matricesBuffer;
+	delete transformationBuffer;
 
 	inputLayout->Release();
 	vertexShader->Release();
@@ -191,54 +190,7 @@ void RenderService::InitPipeline()
 	d3dDeviceInterface->CreateInputLayout(inputElementDescription, 3, VS->GetBufferPointer(), VS->GetBufferSize(), &inputLayout);
 	d3dDeviceContext->IASetInputLayout(inputLayout);
 
-	matricesBuffer = new ConstantBuffer<MATRICES_BUFFER>(16 * 4 * 2, coreService);
-}
-
-void RenderService::InitStates()
-{
-	ID3D11Device* d3dDeviceInterface = coreService->getDeviceInterface();
-
-	D3D11_RASTERIZER_DESC rasterizerDescription;
-	rasterizerDescription.FillMode = D3D11_FILL_SOLID;
-	rasterizerDescription.CullMode = D3D11_CULL_BACK;
-	rasterizerDescription.FrontCounterClockwise = FALSE;
-	rasterizerDescription.DepthClipEnable = TRUE;
-	rasterizerDescription.ScissorEnable = FALSE;
-	rasterizerDescription.AntialiasedLineEnable = FALSE;
-	rasterizerDescription.MultisampleEnable = FALSE;
-	rasterizerDescription.DepthBias = 0;
-	rasterizerDescription.DepthBiasClamp = 0.0f;
-	rasterizerDescription.SlopeScaledDepthBias = 0.0f;
-	d3dDeviceInterface->CreateRasterizerState(&rasterizerDescription, &rasterizerState);
-
-	D3D11_SAMPLER_DESC samplerDescription;
-	samplerDescription.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	samplerDescription.MaxAnisotropy = 16;
-	samplerDescription.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-	samplerDescription.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-	samplerDescription.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-	samplerDescription.BorderColor[0] = 0.0f;
-	samplerDescription.BorderColor[1] = 0.0f;
-	samplerDescription.BorderColor[2] = 0.0f;
-	samplerDescription.BorderColor[3] = 0.0f;
-	samplerDescription.MinLOD = 0.0f;
-	samplerDescription.MaxLOD = FLT_MAX;
-	samplerDescription.MipLODBias = 0.0f;
-	d3dDeviceInterface->CreateSamplerState(&samplerDescription, &samplerState);
-
-	D3D11_BLEND_DESC blendDescription;
-	blendDescription.RenderTarget[0].BlendEnable = TRUE;
-	blendDescription.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-	blendDescription.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-	blendDescription.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-	blendDescription.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	blendDescription.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-	blendDescription.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
-	blendDescription.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-	blendDescription.IndependentBlendEnable = FALSE;
-	blendDescription.AlphaToCoverageEnable = FALSE;
-
-	d3dDeviceInterface->CreateBlendState(&blendDescription, &blendState);
+	transformationBuffer = new ConstantBuffer<TRANSFORMATION_BUFFER>(16 * 4 * 2, coreService);
 }
 
 RenderService::~RenderService()

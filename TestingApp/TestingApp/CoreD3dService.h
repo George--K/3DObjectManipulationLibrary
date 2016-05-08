@@ -9,17 +9,23 @@ class CoreD3dService
 		IDXGISwapChain *swapChain;
 		ID3D11Device *d3dDeviceInterface;
 		ID3D11DeviceContext *d3dDeviceContext;
+		ID3D11RasterizerState* rasterizerState;
+		ID3D11SamplerState* samplerState;
+		ID3D11BlendState* blendState;
 		ID3D11RenderTargetView *backBuffer;
 		ID3D11DepthStencilView *depthBuffer;
 		int screenWidth;
 		int screenHeight;
 	public:
 		CoreD3dService(HWND windowHandle, int screenWidth, int screenHeight);
-		IDXGISwapChain* getSwapChain();
+		void InitStates();
+		void SetStates();
+		HRESULT ShowFrame();
+		HRESULT SwitchToFullscreenMode();
+		HRESULT SwitchToWindowedMode();
 		ID3D11Device* getDeviceInterface();
 		ID3D11DeviceContext* getDeviceContext();
-		ID3D11RenderTargetView* getBackBuffer();
-		ID3D11DepthStencilView* getDepthBuffer();
+		void ClearRenderBuffers();
 		float getAspectRatio();
 		HRESULT CreateBuffer(D3D11_BUFFER_DESC* desc, ID3D11Buffer** buffer);
 		void RegisterConstantBuffer(int slot, ID3D11Buffer* const* buffer);

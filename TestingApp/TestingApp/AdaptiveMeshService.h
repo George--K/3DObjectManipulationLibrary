@@ -1,8 +1,9 @@
 #pragma once
-#include "IMeshService.h"
 #include <fstream>
+#include <map>
+#include "Mesh.h"
 
-class AdaptiveMeshService : public IMeshService
+class AdaptiveMeshService
 {
 	private:
 		std::map<std::string, Mesh> loadedMeshDictionary;

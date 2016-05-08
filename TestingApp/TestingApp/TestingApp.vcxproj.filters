@@ -68,9 +68,6 @@
     <ClInclude Include="Mesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="IMeshService.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="AdaptiveMeshService.h">
       <Filter>Header Files</Filter>
     </ClInclude>
