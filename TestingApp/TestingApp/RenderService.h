@@ -2,6 +2,7 @@
 #include "CoreD3dService.h"
 #include "ICameraService.h"
 #include "ILightService.h"
+#include "ConstantBuffer.h"
 
 #pragma comment (lib, "d3d11.lib")
 #pragma comment (lib, "d3dx11.lib")
@@ -24,17 +25,17 @@ class RenderService
 		ICameraService* cameraService;
 		ILightService* lightService;
 		
-		ID3D11InputLayout *inputLayout;
-		ID3D11VertexShader *vertexShader;
-		ID3D11PixelShader *pixelShader;
-		ID3D11Buffer *vertexBuffer;
-		ID3D11Buffer *indexBuffer;
-		ID3D11Buffer *matricesBuffer;
+		ID3D11InputLayout* inputLayout;
+		ID3D11VertexShader* vertexShader;
+		ID3D11PixelShader* pixelShader;
+		ID3D11Buffer* vertexBuffer;
+		ID3D11Buffer* indexBuffer;
+		ConstantBuffer<MATRICES_BUFFER>* matricesBuffer;
 		ID3D11ShaderResourceView *texture;
 
-		ID3D11RasterizerState *rasterizerState;
-		ID3D11SamplerState *samplerState;
-		ID3D11BlendState *blendState;
+		ID3D11RasterizerState* rasterizerState;
+		ID3D11SamplerState* samplerState;
+		ID3D11BlendState* blendState;
 
 		void RenderFrame();
 		void CleanD3D();

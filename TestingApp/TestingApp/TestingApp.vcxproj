@@ -81,6 +81,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AdaptiveMeshService.cpp" />
+    <ClCompile Include="ConstantBufferTracker.cpp" />
     <ClCompile Include="CoreD3dService.cpp" />
     <ClCompile Include="RenderService.cpp" />
     <ClCompile Include="main.cpp" />
@@ -95,6 +96,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AdaptiveMeshService.h" />
+    <ClInclude Include="ConstantBuffer.h" />
+    <ClInclude Include="ConstantBufferTracker.h" />
     <ClInclude Include="CoreD3dService.h" />
     <ClInclude Include="RenderService.h" />
     <ClInclude Include="ICameraService.h" />

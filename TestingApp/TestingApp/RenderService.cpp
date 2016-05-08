@@ -64,13 +64,13 @@ void RenderService::RenderFrame(void)
 	d3dDeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
 	d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	d3dDeviceContext->UpdateSubresource(matricesBuffer, NULL, NULL, &constantBuffer, 0, 0);
+	matricesBuffer->UpdateBuffer(&constantBuffer);
 	d3dDeviceContext->PSSetShaderResources(0, 1, &texture);
 	d3dDeviceContext->DrawIndexed(36, 0, 0);
 	D3DXMatrixTranslation(&matTranslate, 0.0f, 0.0f, -5.0f);
 	D3DXMatrixScaling(&matScale, 2.0f, 2.0f, 2.0f);
 	constantBuffer.finalTransformationMatrix = matRotate * matTranslate * matScale * matView * matProjection;
-	d3dDeviceContext->UpdateSubresource(matricesBuffer, NULL, NULL, &constantBuffer, 0, 0);
+	matricesBuffer->UpdateBuffer(&constantBuffer);
 	lightService->UpdateLightBuffers();
 	d3dDeviceContext->DrawIndexed(36, 0, 0);
 	coreService->getSwapChain()->Present(0, NULL);
@@ -79,12 +79,14 @@ void RenderService::RenderFrame(void)
 void RenderService::CleanD3D(void)
 {
 	coreService->getSwapChain()->SetFullscreenState(FALSE, NULL);
+
+	delete matricesBuffer;
+
 	inputLayout->Release();
 	vertexShader->Release();
 	pixelShader->Release();
 	vertexBuffer->Release();
 	indexBuffer->Release();
-	matricesBuffer->Release();
 	texture->Release();
 }
 
@@ -199,13 +201,7 @@ void RenderService::InitPipeline()
 	d3dDeviceInterface->CreateInputLayout(inputElementDescription, 3, VS->GetBufferPointer(), VS->GetBufferSize(), &inputLayout);
 	d3dDeviceContext->IASetInputLayout(inputLayout);
 
-	D3D11_BUFFER_DESC buffDesc;
-	ZeroMemory(&buffDesc, sizeof(buffDesc));
-	buffDesc.Usage = D3D11_USAGE_DEFAULT;
-	buffDesc.ByteWidth = sizeof(MATRICES_BUFFER);
-	buffDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	d3dDeviceInterface->CreateBuffer(&buffDesc, NULL, &matricesBuffer);
-	d3dDeviceContext->VSSetConstantBuffers(1, 1, &matricesBuffer);
+	matricesBuffer = new ConstantBuffer<MATRICES_BUFFER>(16 * 4 * 2, coreService);
 }
 
 void RenderService::InitStates()

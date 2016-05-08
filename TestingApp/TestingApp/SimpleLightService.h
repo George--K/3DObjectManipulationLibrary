@@ -1,6 +1,7 @@
 #pragma once
-#include "CoreD3dService.h"
 #include "ILightService.h"
+#include "CoreD3dService.h"
+#include "ConstantBuffer.h"
 
 struct LIGHT_BUFFER
 {
@@ -11,13 +12,10 @@ struct LIGHT_BUFFER
 
 class SimpleLightService : public ILightService
 {
-	protected:
-		CoreD3dService* coreService;
-		ID3D11Buffer *lightD3dBuffer;
+	private:
+		ConstantBuffer<LIGHT_BUFFER>* simpleLightBuffer;
 		LIGHT_BUFFER lightState;
 		bool changed = true;
-
-		virtual void initBuffers();
 	public:
 		SimpleLightService(CoreD3dService* coreService, D3DXVECTOR4 directionalLightVector, D3DXCOLOR directionalLightColor, D3DXCOLOR ambientLightColor);
 		virtual void UpdateLightBuffers();
