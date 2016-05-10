@@ -1,11 +1,12 @@
 #include "Mesh.h"
 
 
-Mesh::Mesh()
-{
-}
-
-
 Mesh::~Mesh()
 {
+	vertexBuffer->Release();
+	indexBuffer->Release();
+	if (texture != NULL)
+	{
+		texture->Release();
+	}
 }

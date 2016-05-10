@@ -1,10 +1,12 @@
 #include "RenderObject.h"
 
 
-RenderObject::RenderObject(float locationX, float locationY, float locationZ,
+RenderObject::RenderObject(std::wstring meshPath,
+						   float locationX, float locationY, float locationZ,
 						   float rotationX, float rotationY, float rotationZ,
 						   float scaleX, float scaleY, float scaleZ)
 {
+	this->meshPath = meshPath;
 	this->locationX = locationX;
 	this->locationY = locationY;
 	this->locationZ = locationZ;
@@ -14,6 +16,11 @@ RenderObject::RenderObject(float locationX, float locationY, float locationZ,
 	this->scaleX = scaleX;
 	this->scaleY = scaleY;
 	this->scaleZ = scaleZ;
+}
+
+std::wstring RenderObject::getMeshPath()
+{
+	return meshPath;
 }
 
 void RenderObject::MoveTo(float locationX, float locationY, float locationZ)

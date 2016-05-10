@@ -83,11 +83,13 @@
     <ClCompile Include="AdaptiveMeshService.cpp" />
     <ClCompile Include="ConstantBufferTracker.cpp" />
     <ClCompile Include="CoreD3dService.cpp" />
+    <ClCompile Include="RenderObjectManager.cpp" />
     <ClCompile Include="RenderService.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="MultipleCameraService.cpp" />
     <ClCompile Include="RenderObject.cpp" />
+    <ClCompile Include="ShaderLoader.cpp" />
     <ClCompile Include="SimpleLightService.cpp" />
     <ClCompile Include="WindowBuilder.cpp" />
   </ItemGroup>
@@ -99,6 +101,7 @@
     <ClInclude Include="ConstantBuffer.h" />
     <ClInclude Include="ConstantBufferTracker.h" />
     <ClInclude Include="CoreD3dService.h" />
+    <ClInclude Include="RenderObjectManager.h" />
     <ClInclude Include="RenderService.h" />
     <ClInclude Include="ICameraService.h" />
     <ClInclude Include="ILightService.h" />
@@ -106,6 +109,7 @@
     <ClInclude Include="MessageQueue.h" />
     <ClInclude Include="MultipleCameraService.h" />
     <ClInclude Include="RenderObject.h" />
+    <ClInclude Include="ShaderLoader.h" />
     <ClInclude Include="SimpleLightService.h" />
     <ClInclude Include="WindowBuilder.h" />
   </ItemGroup>

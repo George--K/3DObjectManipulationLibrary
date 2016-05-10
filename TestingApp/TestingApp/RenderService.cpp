@@ -79,10 +79,6 @@ void RenderService::CleanD3D(void)
 	coreService->SwitchToWindowedMode();
 
 	delete transformationBuffer;
-
-	inputLayout->Release();
-	vertexShader->Release();
-	pixelShader->Release();
 	vertexBuffer->Release();
 	indexBuffer->Release();
 	texture->Release();
@@ -158,37 +154,16 @@ void RenderService::InitGraphics()
 
 	coreService->CreateBuffer(&bufferDescription, &indexBuffer);
 	coreService->UpdateDynamicBuffer(indexBuffer, OurIndices, sizeof(OurIndices));
+}
 
-	D3DX11CreateShaderResourceViewFromFile(coreService->getDeviceInterface(),
+void RenderService::InitPipeline()
+{
+	HRESULT res = D3DX11CreateShaderResourceViewFromFile(coreService->getDeviceInterface(),
 		L"E:\\bricks.png",
 		NULL,
 		NULL,
 		&texture,
 		NULL);
-}
-
-void RenderService::InitPipeline()
-{
-	ID3D11Device* d3dDeviceInterface = coreService->getDeviceInterface();
-	ID3D11DeviceContext* d3dDeviceContext = coreService->getDeviceContext();
-
-	ID3D10Blob *VS, *PS;
-	D3DX11CompileFromFile(L"shaders.shader", 0, 0, "VShader", "vs_4_0", 0, 0, 0, &VS, 0, 0);
-	D3DX11CompileFromFile(L"shaders.shader", 0, 0, "PShader", "ps_4_0", 0, 0, 0, &PS, 0, 0);
-
-	d3dDeviceInterface->CreateVertexShader(VS->GetBufferPointer(), VS->GetBufferSize(), NULL, &vertexShader);
-	d3dDeviceInterface->CreatePixelShader(PS->GetBufferPointer(), PS->GetBufferSize(), NULL, &pixelShader);
-	d3dDeviceContext->VSSetShader(vertexShader, 0, 0);
-	d3dDeviceContext->PSSetShader(pixelShader, 0, 0);
-
-	D3D11_INPUT_ELEMENT_DESC inputElementDescription[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	};
-	d3dDeviceInterface->CreateInputLayout(inputElementDescription, 3, VS->GetBufferPointer(), VS->GetBufferSize(), &inputLayout);
-	d3dDeviceContext->IASetInputLayout(inputLayout);
 
 	transformationBuffer = new ConstantBuffer<TRANSFORMATION_BUFFER>(16 * 4 * 2, coreService);
 }

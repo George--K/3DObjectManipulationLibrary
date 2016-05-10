@@ -4,13 +4,10 @@
 #include <d3dx10.h>
 #include <string>
 
-class Mesh
+struct Mesh
 {
-	private:
-		ID3D11Buffer *vertexBuffer;
-		ID3D11Buffer *indexBuffer;
-		std::string textureName;
-	public:
-		Mesh();
-		~Mesh();
+	ID3D11Buffer* vertexBuffer;
+	ID3D11Buffer* indexBuffer;
+	ID3D11ShaderResourceView* texture;
+	~Mesh();
 };

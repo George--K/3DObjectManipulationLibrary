@@ -25,13 +25,10 @@ class RenderService
 		ICameraService* cameraService;
 		ILightService* lightService;
 		
-		ID3D11InputLayout* inputLayout;
-		ID3D11VertexShader* vertexShader;
-		ID3D11PixelShader* pixelShader;
 		ID3D11Buffer* vertexBuffer;
 		ID3D11Buffer* indexBuffer;
 		ConstantBuffer<TRANSFORMATION_BUFFER>* transformationBuffer;
-		ID3D11ShaderResourceView *texture;
+		ID3D11ShaderResourceView* texture;
 
 		void RenderFrame();
 		void CleanD3D();

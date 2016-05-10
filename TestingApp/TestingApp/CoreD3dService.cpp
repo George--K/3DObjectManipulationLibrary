@@ -16,7 +16,7 @@ CoreD3dService::CoreD3dService(HWND windowHandle, int screenWidth, int screenHei
 	swapChainDescription.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	swapChainDescription.OutputWindow = windowHandle;
 	swapChainDescription.SampleDesc.Count = 4;
-	swapChainDescription.Windowed = FALSE;
+	swapChainDescription.Windowed = TRUE;
 	swapChainDescription.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
 	D3D11CreateDeviceAndSwapChain(NULL,
@@ -122,17 +122,17 @@ void CoreD3dService::SetStates()
 }
 HRESULT CoreD3dService::ShowFrame()
 {
-	swapChain->Present(0, NULL);
+	return swapChain->Present(0, NULL);
 }
 
 HRESULT CoreD3dService::SwitchToFullscreenMode()
 {
-	swapChain->
+	return swapChain->SetFullscreenState(TRUE, NULL);
 }
 
 HRESULT CoreD3dService::SwitchToWindowedMode()
 {
-	swapChain->Present(0, NULL);
+	return swapChain->SetFullscreenState(FALSE, NULL);
 }
 
 ID3D11Device* CoreD3dService::getDeviceInterface()
@@ -177,6 +177,71 @@ void CoreD3dService::UpdateDynamicBuffer(ID3D11Buffer* buffer, const void* data,
 	d3dDeviceContext->Map(buffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &mappedSubresource);
 	memcpy(mappedSubresource.pData, data, size);
 	d3dDeviceContext->Unmap(buffer, NULL);
+}
+
+void CoreD3dService::SetVertexIndexBuffers(ID3D11Buffer* const* vertexBuffer, const UINT* stride, ID3D11Buffer* indexBuffer)
+{
+	d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	UINT offset = 0;
+	d3dDeviceContext->IASetVertexBuffers(0, 1, vertexBuffer, stride, &offset);
+	d3dDeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+}
+
+HRESULT CoreD3dService::RegisterTexture(LPCWSTR path, ID3D11ShaderResourceView** texture)
+{
+	return D3DX11CreateShaderResourceViewFromFile(d3dDeviceInterface,
+		path,
+		NULL,
+		NULL,
+		texture,
+		NULL);
+}
+
+void CoreD3dService::SetActiveTexture(ID3D11ShaderResourceView* const* texture)
+{
+	d3dDeviceContext->PSSetShaderResources(0, 1, texture);
+}
+
+void CoreD3dService::SetNewVertexShaderAndInputLayout(LPCWSTR path, D3D11_INPUT_ELEMENT_DESC* inputDescription, UINT numElements, ID3D11VertexShader** outShader, ID3D11InputLayout** outLayout)
+{
+	ID3D10Blob *VS;
+	D3DX11CompileFromFile(L"shaders.shader", 0, 0, "VShader", "vs_4_0", 0, 0, 0, &VS, 0, 0);
+	ID3D11VertexShader* vertexShader;
+	d3dDeviceInterface->CreateVertexShader(VS->GetBufferPointer(), VS->GetBufferSize(), NULL, &vertexShader);
+	EnableVertexShader(vertexShader);
+	*outShader = vertexShader;
+	ID3D11InputLayout* inputLayout;
+	d3dDeviceInterface->CreateInputLayout(inputDescription, numElements, VS->GetBufferPointer(), VS->GetBufferSize(), &inputLayout);
+	d3dDeviceContext->IASetInputLayout(inputLayout);
+	*outLayout = inputLayout;
+}
+
+ID3D11VertexShader* CoreD3dService::CreateVertexShader(LPCWSTR path)
+{
+	ID3D10Blob *VS;
+	D3DX11CompileFromFile(L"shaders.shader", 0, 0, "VShader", "vs_4_0", 0, 0, 0, &VS, 0, 0);
+	ID3D11VertexShader* vertexShader;
+	d3dDeviceInterface->CreateVertexShader(VS->GetBufferPointer(), VS->GetBufferSize(), NULL, &vertexShader);
+	return vertexShader;
+}
+
+ID3D11PixelShader* CoreD3dService::CreatePixelShader(LPCWSTR path)
+{
+	ID3D10Blob *PS;
+	D3DX11CompileFromFile(L"shaders.shader", 0, 0, "PShader", "ps_4_0", 0, 0, 0, &PS, 0, 0);
+	ID3D11PixelShader* pixelShader;
+	HRESULT res = d3dDeviceInterface->CreatePixelShader(PS->GetBufferPointer(), PS->GetBufferSize(), NULL, &pixelShader);
+	return pixelShader;
+}
+
+void CoreD3dService::EnableVertexShader(ID3D11VertexShader* shader)
+{
+	d3dDeviceContext->VSSetShader(shader, 0, 0);
+}
+
+void CoreD3dService::EnablePixelShader(ID3D11PixelShader* shader)
+{
+	d3dDeviceContext->PSSetShader(shader, 0, 0);
 }
 
 CoreD3dService::~CoreD3dService()
