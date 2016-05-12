@@ -23,10 +23,9 @@ class CoreD3dService
 		HRESULT ShowFrame();
 		HRESULT SwitchToFullscreenMode();
 		HRESULT SwitchToWindowedMode();
-		ID3D11Device* getDeviceInterface();
-		ID3D11DeviceContext* getDeviceContext();
 		void ClearRenderBuffers();
-		float getAspectRatio();
+		float GetAspectRatio();
+		void Draw(int numberOfIndices);
 		HRESULT CreateBuffer(D3D11_BUFFER_DESC* desc, ID3D11Buffer** buffer);
 		void RegisterConstantBuffer(int slot, ID3D11Buffer* const* buffer);
 		void UpdateDefaultBuffer(ID3D11Buffer* buffer, const void* data);

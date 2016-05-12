@@ -3,12 +3,11 @@
 #include "ICameraService.h"
 #include "ILightService.h"
 #include "ConstantBuffer.h"
+#include "RenderObjectManager.h"
 
 #pragma comment (lib, "d3d11.lib")
 #pragma comment (lib, "d3dx11.lib")
 #pragma comment (lib, "d3dx10.lib")
-
-struct VERTEX { FLOAT X, Y, Z; D3DXVECTOR3 Normal; FLOAT U, V; };
 
 struct TRANSFORMATION_BUFFER
 {
@@ -22,20 +21,17 @@ class RenderService
 		volatile bool stopped = false;
 
 		CoreD3dService* coreService;
+		RenderObjectManager* objectManager;
 		ICameraService* cameraService;
 		ILightService* lightService;
 		
-		ID3D11Buffer* vertexBuffer;
-		ID3D11Buffer* indexBuffer;
 		ConstantBuffer<TRANSFORMATION_BUFFER>* transformationBuffer;
-		ID3D11ShaderResourceView* texture;
-
 		void RenderFrame();
 		void CleanD3D();
 		void InitGraphics();
 		void InitPipeline();
 	public:
-		RenderService(CoreD3dService* coreService, ICameraService* cameraService, ILightService* lightService);
+		RenderService(CoreD3dService* coreService, RenderObjectManager* objectManager, ICameraService* cameraService, ILightService* lightService);
 		void BeginRenderLoop();
 		void StopService();
 		~RenderService();

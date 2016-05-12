@@ -1,12 +1,12 @@
 #include "RenderService.h"
 
-RenderService::RenderService(CoreD3dService* coreService, ICameraService* cameraService, ILightService* lightService)
+RenderService::RenderService(CoreD3dService* coreService, RenderObjectManager* objectManager, ICameraService* cameraService, ILightService* lightService)
 {
 	this->coreService = coreService;
+	this->objectManager = objectManager;
 	this->cameraService = cameraService;
 	this->lightService = lightService;
-	InitPipeline();
-	InitGraphics();
+	transformationBuffer = new ConstantBuffer<TRANSFORMATION_BUFFER>(16 * 4 * 2, coreService);
 	coreService->InitStates();
 }
 
@@ -26,17 +26,9 @@ void RenderService::StopService()
 
 void RenderService::RenderFrame(void)
 {
-	ID3D11DeviceContext* d3dDeviceContext = coreService->getDeviceContext();
-
-	TRANSFORMATION_BUFFER transformations;
-
-	D3DXMATRIX matTranslate, matRotate, matScale, matView, matProjection;
-	D3DXMATRIX matFinal;
-
-	D3DXMatrixRotationY(&matRotate, 0.5);
+	D3DXMATRIX matView, matProjection;
 
 	CameraProperties cameraProperties = cameraService->getCameraPropertiesForRendering();
-
 	D3DXMatrixLookAtLH(&matView,
 		&cameraProperties.Location,
 		&cameraProperties.LookAt,
@@ -44,128 +36,46 @@ void RenderService::RenderFrame(void)
 
 	D3DXMatrixPerspectiveFovLH(&matProjection,
 		(FLOAT)D3DXToRadian(45),
-		coreService->getAspectRatio(),
+		coreService->GetAspectRatio(),
 		1.0f,
 		100.0f);
 
-	transformations.finalTransformationMatrix = matRotate * matView * matProjection;
-	transformations.rotationMatrix = matRotate;
-
 	coreService->SetStates();
 	coreService->ClearRenderBuffers();
-
-	d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	UINT stride = sizeof(VERTEX);
-	UINT offset = 0;
-	d3dDeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
-	d3dDeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-	transformationBuffer->Update(&transformations);
-	d3dDeviceContext->PSSetShaderResources(0, 1, &texture);
-	d3dDeviceContext->DrawIndexed(36, 0, 0);
-
-	D3DXMatrixTranslation(&matTranslate, 0.0f, 0.0f, -5.0f);
-	D3DXMatrixScaling(&matScale, 2.0f, 2.0f, 2.0f);
-	transformations.finalTransformationMatrix = matRotate * matTranslate * matScale * matView * matProjection;
-	transformationBuffer->Update(&transformations);
 	lightService->UpdateLightBuffers();
-	d3dDeviceContext->DrawIndexed(36, 0, 0);
 
+	std::set<std::wstring> meshIds = objectManager->GetMeshes();
+	for (auto i = meshIds.begin(); i != meshIds.end(); i++)
+	{
+		int numberOfIndices;
+		objectManager->SetActiveMesh(*i, &numberOfIndices);
+		std::set<RenderObject*> objects = objectManager->GetObjectsForMesh(*i);
+		for (auto j = objects.begin(); j != objects.end(); j++)
+		{
+			TRANSFORMATION_BUFFER transformations;
+			D3DXMATRIX matTranslate;
+			auto location = (*j)->GetPosition();
+			D3DXMatrixTranslation(&matTranslate, std::get<0>(location), std::get<1>(location), std::get<2>(location));
+			D3DXMATRIX matRotate;
+			auto rotation = (*j)->GetRotation();
+			D3DXMatrixRotationYawPitchRoll(&matRotate, std::get<0>(rotation), std::get<1>(rotation), std::get<2>(rotation));
+			D3DXMATRIX matScale;
+			auto scale = (*j)->GetScale();
+			D3DXMatrixScaling(&matScale, std::get<0>(scale), std::get<1>(scale), std::get<2>(scale));
+			D3DXMATRIX matFinal = matScale * matRotate * matTranslate * matView * matProjection;
+			transformations.finalTransformationMatrix = matFinal;
+			transformations.rotationMatrix = matRotate;
+			transformationBuffer->Update(&transformations);
+			coreService->Draw(numberOfIndices);
+		}
+	}
 	coreService->ShowFrame();
 }
 
 void RenderService::CleanD3D(void)
 {
 	coreService->SwitchToWindowedMode();
-
 	delete transformationBuffer;
-	vertexBuffer->Release();
-	indexBuffer->Release();
-	texture->Release();
-}
-
-void RenderService::InitGraphics()
-{
-	VERTEX OurVertices[] =
-	{
-		{ -1.0f, -1.0f, 1.0f, D3DXVECTOR3(0.0f, 0.0f, 1.0f), 0.0f, 0.0f },
-		{ 1.0f, -1.0f, 1.0f, D3DXVECTOR3(0.0f, 0.0f, 1.0f), 0.0f, 1.0f },
-		{ -1.0f, 1.0f, 1.0f, D3DXVECTOR3(0.0f, 0.0f, 1.0f), 1.0f, 0.0f },
-		{ 1.0f, 1.0f, 1.0f, D3DXVECTOR3(0.0f, 0.0f, 1.0f), 1.0f, 1.0f },
-
-		{ -1.0f, -1.0f, -1.0f, D3DXVECTOR3(0.0f, 0.0f, -1.0f), 0.0f, 0.0f },
-		{ -1.0f, 1.0f, -1.0f, D3DXVECTOR3(0.0f, 0.0f, -1.0f), 0.0f, 1.0f },
-		{ 1.0f, -1.0f, -1.0f, D3DXVECTOR3(0.0f, 0.0f, -1.0f), 1.0f, 0.0f },
-		{ 1.0f, 1.0f, -1.0f, D3DXVECTOR3(0.0f, 0.0f, -1.0f), 1.0f, 1.0f },
-
-		{ -1.0f, 1.0f, -1.0f, D3DXVECTOR3(0.0f, 1.0f, 0.0f), 0.0f, 0.0f },
-		{ -1.0f, 1.0f, 1.0f, D3DXVECTOR3(0.0f, 1.0f, 0.0f), 0.0f, 1.0f },
-		{ 1.0f, 1.0f, -1.0f, D3DXVECTOR3(0.0f, 1.0f, 0.0f), 1.0f, 0.0f },
-		{ 1.0f, 1.0f, 1.0f, D3DXVECTOR3(0.0f, 1.0f, 0.0f), 1.0f, 1.0f },
-
-		{ -1.0f, -1.0f, -1.0f, D3DXVECTOR3(0.0f, -1.0f, 0.0f), 0.0f, 0.0f },
-		{ 1.0f, -1.0f, -1.0f, D3DXVECTOR3(0.0f, -1.0f, 0.0f), 0.0f, 1.0f },
-		{ -1.0f, -1.0f, 1.0f, D3DXVECTOR3(0.0f, -1.0f, 0.0f), 1.0f, 0.0f },
-		{ 1.0f, -1.0f, 1.0f, D3DXVECTOR3(0.0f, -1.0f, 0.0f), 1.0f, 1.0f },
-
-		{ 1.0f, -1.0f, -1.0f, D3DXVECTOR3(1.0f, 0.0f, 0.0f), 0.0f, 0.0f },
-		{ 1.0f, 1.0f, -1.0f, D3DXVECTOR3(1.0f, 0.0f, 0.0f), 0.0f, 1.0f },
-		{ 1.0f, -1.0f, 1.0f, D3DXVECTOR3(1.0f, 0.0f, 0.0f), 1.0f, 0.0f },
-		{ 1.0f, 1.0f, 1.0f, D3DXVECTOR3(1.0f, 0.0f, 0.0f), 1.0f, 1.0f },
-
-		{ -1.0f, -1.0f, -1.0f, D3DXVECTOR3(-1.0f, 0.0f, 0.0f), 0.0f, 0.0f },
-		{ -1.0f, -1.0f, 1.0f, D3DXVECTOR3(-1.0f, 0.0f, 0.0f), 0.0f, 1.0f },
-		{ -1.0f, 1.0f, -1.0f, D3DXVECTOR3(-1.0f, 0.0f, 0.0f), 1.0f, 0.0f },
-		{ -1.0f, 1.0f, 1.0f, D3DXVECTOR3(-1.0f, 0.0f, 0.0f), 1.0f, 1.0f },
-	};
-
-	D3D11_BUFFER_DESC bufferDescription;
-	ZeroMemory(&bufferDescription, sizeof(bufferDescription));
-
-	bufferDescription.Usage = D3D11_USAGE_DYNAMIC;
-	bufferDescription.ByteWidth = sizeof(VERTEX) * 24;
-	bufferDescription.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	bufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-	coreService->CreateBuffer(&bufferDescription, &vertexBuffer);
-	coreService->UpdateDynamicBuffer(vertexBuffer, OurVertices, sizeof(OurVertices));
-
-	DWORD OurIndices[] =
-	{
-		0, 1, 2,
-		2, 1, 3,
-		4, 5, 6,
-		6, 5, 7,
-		8, 9, 10,
-		10, 9, 11,
-		12, 13, 14,
-		14, 13, 15,
-		16, 17, 18,
-		18, 17, 19,
-		20, 21, 22,
-		22, 21, 23,
-	};
-
-	bufferDescription.Usage = D3D11_USAGE_DYNAMIC;
-	bufferDescription.ByteWidth = sizeof(DWORD) * 36;
-	bufferDescription.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	bufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	bufferDescription.MiscFlags = 0;
-
-	coreService->CreateBuffer(&bufferDescription, &indexBuffer);
-	coreService->UpdateDynamicBuffer(indexBuffer, OurIndices, sizeof(OurIndices));
-}
-
-void RenderService::InitPipeline()
-{
-	HRESULT res = D3DX11CreateShaderResourceViewFromFile(coreService->getDeviceInterface(),
-		L"E:\\bricks.png",
-		NULL,
-		NULL,
-		&texture,
-		NULL);
-
-	transformationBuffer = new ConstantBuffer<TRANSFORMATION_BUFFER>(16 * 4 * 2, coreService);
 }
 
 RenderService::~RenderService()

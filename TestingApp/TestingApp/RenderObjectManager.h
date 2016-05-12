@@ -17,7 +17,8 @@ class RenderObjectManager
 {
 	private:
 		std::map<std::wstring, std::set<RenderObject*>> objectMap;
-		std::map<std::wstring, Mesh> meshMap;
+		std::map<std::wstring, Mesh*> meshMap;
+		std::set<std::wstring> meshSet;
 		MESH_DELETION_TYPE meshPersistence;
 		CoreD3dService* coreService;
 	public:
@@ -26,7 +27,9 @@ class RenderObjectManager
 		void UnloadObject(RenderObject* object);
 		void LoadMesh(std::wstring meshPath, std::wstring texturePath = L"");
 		void UnloadMesh(std::wstring meshPath);
-		void SetActiveMesh(std::wstring meshPath);
+		void SetActiveMesh(std::wstring meshPath, int* outNumberOfIndices);
+		std::set<std::wstring> GetMeshes();
+		std::set<RenderObject*> GetObjectsForMesh(std::wstring meshPath);
 		~RenderObjectManager();
 };
 

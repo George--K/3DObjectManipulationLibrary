@@ -135,25 +135,20 @@ HRESULT CoreD3dService::SwitchToWindowedMode()
 	return swapChain->SetFullscreenState(FALSE, NULL);
 }
 
-ID3D11Device* CoreD3dService::getDeviceInterface()
-{
-	return d3dDeviceInterface;
-}
-
-ID3D11DeviceContext* CoreD3dService::getDeviceContext()
-{
-	return d3dDeviceContext;
-}
-
 void CoreD3dService::ClearRenderBuffers()
 {
 	d3dDeviceContext->ClearRenderTargetView(backBuffer, D3DXCOLOR(0.0f, 0.2f, 0.4f, 1.0f));
 	d3dDeviceContext->ClearDepthStencilView(depthBuffer, D3D11_CLEAR_DEPTH, 1.0f, 0);
 }
 
-float CoreD3dService::getAspectRatio()
+float CoreD3dService::GetAspectRatio()
 {
 	return (FLOAT)screenWidth / (FLOAT)screenHeight;
+}
+
+void CoreD3dService::Draw(int numberOfIndices)
+{
+	d3dDeviceContext->DrawIndexed(numberOfIndices, 0, 0);
 }
 
 HRESULT CoreD3dService::CreateBuffer(D3D11_BUFFER_DESC* desc, ID3D11Buffer** buffer)

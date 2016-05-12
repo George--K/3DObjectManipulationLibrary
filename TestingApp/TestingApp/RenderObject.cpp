@@ -7,18 +7,12 @@ RenderObject::RenderObject(std::wstring meshPath,
 						   float scaleX, float scaleY, float scaleZ)
 {
 	this->meshPath = meshPath;
-	this->locationX = locationX;
-	this->locationY = locationY;
-	this->locationZ = locationZ;
-	this->rotationX = rotationX;
-	this->rotationY = rotationY;
-	this->rotationZ = rotationZ;
-	this->scaleX = scaleX;
-	this->scaleY = scaleY;
-	this->scaleZ = scaleZ;
+	MoveTo(locationX, locationY, locationZ);
+	RotateTo(rotationX, rotationY, rotationZ);
+	ScaleTo(scaleX, scaleY, scaleZ);
 }
 
-std::wstring RenderObject::getMeshPath()
+std::wstring RenderObject::GetMeshPath()
 {
 	return meshPath;
 }
@@ -42,6 +36,21 @@ void RenderObject::ScaleTo(float scaleX, float scaleY, float scaleZ)
 	this->scaleX = scaleX;
 	this->scaleY = scaleY;
 	this->scaleZ = scaleZ;
+}
+
+std::tuple<float, float, float> RenderObject::GetPosition()
+{
+	return std::make_tuple(locationX, locationY, locationZ);
+}
+
+std::tuple<float, float, float> RenderObject::GetRotation()
+{
+	return std::make_tuple(rotationX, rotationY, rotationZ);
+}
+
+std::tuple<float, float, float> RenderObject::GetScale()
+{
+	return std::make_tuple(scaleX, scaleY, scaleZ);
 }
 
 RenderObject::~RenderObject()

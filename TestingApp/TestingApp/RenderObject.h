@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <tuple>
 
 class RenderObject
 {
@@ -13,10 +14,13 @@ class RenderObject
 					 float locationX = 0.0f, float locationY = 0.0f, float locationZ = 0.0f,
 					 float rotationX = 0.0f, float rotationY = 0.0f, float rotationZ = 0.0f,
 					 float scaleX = 1.0f, float scaleY = 1.0f, float scaleZ = 1.0f);
-		std::wstring getMeshPath();
+		std::wstring GetMeshPath();
 		void MoveTo(float locationX, float locationY, float locationZ);
 		void RotateTo(float rotationX, float rotationY, float rotationZ);
 		void ScaleTo(float scaleX, float scaleY, float scaleZ);
+		std::tuple<float, float, float> GetPosition();
+		std::tuple<float, float, float> GetRotation();
+		std::tuple<float, float, float> GetScale();
 		~RenderObject();
 };
 

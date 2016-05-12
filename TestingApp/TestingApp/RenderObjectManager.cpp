@@ -68,7 +68,7 @@ RenderObjectManager::RenderObjectManager(CoreD3dService* coreService, MESH_DELET
 
 RenderObject* RenderObjectManager::LoadObject(std::wstring meshPath, D3DXVECTOR3 position, D3DXVECTOR3 rotation, D3DXVECTOR3 scale, std::wstring texturePath)
 {
-	if (meshMap.count(meshPath) == 0)
+	if (meshSet.count(meshPath) == 0)
 	{
 		LoadMesh(meshPath, texturePath);
 	}
@@ -79,21 +79,21 @@ RenderObject* RenderObjectManager::LoadObject(std::wstring meshPath, D3DXVECTOR3
 
 void RenderObjectManager::UnloadObject(RenderObject* object)
 {
-	objectMap[object->getMeshPath()].erase(object);
-	if (objectMap[object->getMeshPath()].size() == 0 && meshPersistence == AUTO_DELETION)
+	objectMap[object->GetMeshPath()].erase(object);
+	if (objectMap[object->GetMeshPath()].size() == 0 && meshPersistence == AUTO_DELETION)
 	{
-		UnloadMesh(object->getMeshPath());
+		UnloadMesh(object->GetMeshPath());
 	}
 	delete object;
 }
 
 void RenderObjectManager::LoadMesh(std::wstring meshPath, std::wstring texturePath)
 {
-	if (meshMap.count(meshPath) != 0)
+	if (meshSet.count(meshPath) != 0)
 	{
 		UnloadMesh(meshPath);
 	}
-
+	
 	ID3D11ShaderResourceView* texture;
 	if (texturePath != L"")
 	{
@@ -107,7 +107,7 @@ void RenderObjectManager::LoadMesh(std::wstring meshPath, std::wstring texturePa
 	int numberOfVertices;
 	int numberOfIndices;
 	std::pair<VERTEX*, DWORD*> meshData = DummyLoad(meshPath, &numberOfVertices, &numberOfIndices);
-
+	HRESULT res;
 	ID3D11Buffer* vertexBuffer;
 	D3D11_BUFFER_DESC bufferDescription;
 	ZeroMemory(&bufferDescription, sizeof(bufferDescription));
@@ -115,7 +115,7 @@ void RenderObjectManager::LoadMesh(std::wstring meshPath, std::wstring texturePa
 	bufferDescription.ByteWidth = sizeof(VERTEX) * numberOfVertices;
 	bufferDescription.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	coreService->CreateBuffer(&bufferDescription, &vertexBuffer);
+	res = coreService->CreateBuffer(&bufferDescription, &vertexBuffer);
 	coreService->UpdateDynamicBuffer(vertexBuffer, meshData.first, sizeof(VERTEX) * numberOfVertices);
 
 	ID3D11Buffer* indexBuffer;
@@ -124,34 +124,51 @@ void RenderObjectManager::LoadMesh(std::wstring meshPath, std::wstring texturePa
 	bufferDescription.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	bufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	bufferDescription.MiscFlags = 0;
-	coreService->CreateBuffer(&bufferDescription, &indexBuffer);
+	res = coreService->CreateBuffer(&bufferDescription, &indexBuffer);
 	coreService->UpdateDynamicBuffer(indexBuffer, meshData.second, sizeof(DWORD) * numberOfIndices);
 
-	meshMap[meshPath] = Mesh { vertexBuffer, indexBuffer, texture };
+	meshMap[meshPath] = new Mesh { vertexBuffer, indexBuffer, texture, numberOfIndices };
+	meshSet.insert(meshPath);
 }
 
-void RenderObjectManager::SetActiveMesh(std::wstring meshPath)
+void RenderObjectManager::SetActiveMesh(std::wstring meshPath, int* outNumberOfIndices)
 {
-	if (meshMap.count(meshPath) == 0)
+	if (meshSet.count(meshPath) == 0)
 	{
 		throw std::invalid_argument("Mesh not loaded.");
 	}
-	Mesh mesh = meshMap[meshPath];
+	Mesh* mesh = meshMap[meshPath];
 	UINT stride = sizeof(VERTEX);
-	coreService->SetVertexIndexBuffers(&(mesh.vertexBuffer), &stride, mesh.indexBuffer);
-	if (mesh.texture != NULL)
+	coreService->SetVertexIndexBuffers(&(mesh->vertexBuffer), &stride, mesh->indexBuffer);
+	if (mesh->texture != NULL)
 	{
-		coreService->SetActiveTexture(&(mesh.texture));
+		coreService->SetActiveTexture(&(mesh->texture));
 	}
+	*outNumberOfIndices = mesh->indices;
 }
 
 void RenderObjectManager::UnloadMesh(std::wstring meshPath)
 {
-	if (meshMap.count(meshPath) == 0)
+	if (meshSet.count(meshPath) == 0)
 	{
 		throw std::invalid_argument("Mesh not loaded.");
 	}
 	meshMap.erase(meshPath);
+	meshSet.erase(meshPath);
+}
+
+std::set<std::wstring> RenderObjectManager::GetMeshes()
+{
+	return meshSet;
+}
+
+std::set<RenderObject*> RenderObjectManager::GetObjectsForMesh(std::wstring meshPath)
+{
+	if (meshSet.count(meshPath) == 0)
+	{
+		throw std::invalid_argument("Mesh not loaded.");
+	}
+	return objectMap[meshPath];
 }
 
 RenderObjectManager::~RenderObjectManager()
@@ -162,5 +179,10 @@ RenderObjectManager::~RenderObjectManager()
 		{
 			delete *j;
 		}
+	}
+
+	for (auto i = meshMap.begin(); i != meshMap.end(); i++)
+	{
+		delete i->second;
 	}
 }

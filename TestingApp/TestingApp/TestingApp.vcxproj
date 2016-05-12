@@ -97,6 +97,7 @@
     <None Include="shaders.shader" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="3DObjectManipulationLibrary.h" />
     <ClInclude Include="AdaptiveMeshService.h" />
     <ClInclude Include="ConstantBuffer.h" />
     <ClInclude Include="ConstantBufferTracker.h" />
@@ -112,6 +113,9 @@
     <ClInclude Include="ShaderLoader.h" />
     <ClInclude Include="SimpleLightService.h" />
     <ClInclude Include="WindowBuilder.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="bricks.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

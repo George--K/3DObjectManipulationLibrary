@@ -9,5 +9,6 @@ struct Mesh
 	ID3D11Buffer* vertexBuffer;
 	ID3D11Buffer* indexBuffer;
 	ID3D11ShaderResourceView* texture;
+	int indices;
 	~Mesh();
 };
